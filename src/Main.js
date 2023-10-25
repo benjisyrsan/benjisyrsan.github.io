@@ -13,7 +13,7 @@ gui.setAttribute('width', screenSize[0]);
 gui.setAttribute('height', screenSize[1]);
 
 const textureSheet = new Image();
-textureSheet.src = "file:///C:/Users/benja/Desktop/The%20Social%20Contract%20(game)/main/src/resourses/grass_tile.png";
+textureSheet.src = "./src/resourses/grass_tile.png";
 
 textureSheet.onload = function(){
   ctx.imageSmoothingEnabled = false;
