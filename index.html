@@ -1,7 +1,26 @@
 <!DOCTYPE html>
-<html>
-<body>
-<h1>Benjamins website</h1>
-<p>Hi! Welcome to my website</p>
-</body>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="style.css">
+    <title>Static Template</title>
+  </head>
+  <body>
+    <div id="gamediv">
+      <canvas id="gamescreen" ></canvas>
+      <canvas id="gui" ></canvas>
+    </div>
+
+    <div>
+      <p id="infotext">...</p>
+      <p id="selectinfo">...</p>
+    </div>
+
+    <script type="text/javascript" src="src/PlayerInput.js"></script>
+    <script type="text/javascript" src="src/lib/NoiseGenerator.js"></script>
+    <script type="text/javascript" src="src/WorldGenerator.js"></script>
+    <script type="text/javascript" src="src/Main.js"></script>
+  </body>
 </html>
