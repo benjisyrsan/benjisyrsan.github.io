@@ -1,0 +1,35 @@
+body {
+  padding: 0;
+  margin: 0;
+  background-color: lightgrey;
+}
+
+#gamediv {
+  margin:auto;
+  width: 50%;
+  position: relative;
+}
+
+#gamescreen {
+  border: 2px;
+  border-color: #000000;
+  border-style: solid;
+
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+#gui {
+  border: 2px;
+  border-color: #000000;
+  border-style: solid;
+
+  position: absolute;
+  top: 0;
+  left: 0;
+}
