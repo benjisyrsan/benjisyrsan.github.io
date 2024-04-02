@@ -3,10 +3,14 @@ var ctx = canvas.getContext("2d", { alpha: false });
 
 var gui = document.getElementById("gui");
 var ctxGui = gui.getContext("2d");
-var txt = document.getElementById("infotext");
+//var txt = document.getElementById("infotext");
 let depthText = document.getElementById("depthText");
 
 var screenSize = [400, 600];
+if (window.innerHeight > window.innerWidth){
+  screenSize = [window.innerWidth, window.innerWidth*1.5];
+}
+//var screenSize = [1000, 1500];
 canvas.setAttribute('width', screenSize[0]);
 canvas.setAttribute('height', screenSize[1]);
 gui.setAttribute('width', screenSize[0]);
@@ -18,8 +22,17 @@ textureSheet.src = "./src/resourses/grass_tile.png";
 const playerAnimationSheet = new Image();
 playerAnimationSheet.src = "./src/resourses/playerAnimation.png";
 
-const backgroundImage = new Image();
-backgroundImage.src = "./src/resourses/backgroundimage.png";
+const backgroundImage0 = new Image();
+backgroundImage0.src = "./src/resourses/bgImgLayer0.png";
+
+const backgroundImage1 = new Image();
+backgroundImage1.src = "./src/resourses/bgImgLayer1.png";
+
+const backgroundImage2 = new Image();
+backgroundImage2.src = "./src/resourses/bgImgLayer2.png";
+
+const backgroundImage3 = new Image();
+backgroundImage3.src = "./src/resourses/bgImgLayer3.png";
 
 textureSheet.onload = function(){
   ctx.imageSmoothingEnabled = false;
@@ -37,16 +50,37 @@ let perlinScale = 10
 
 let worldBlocksDict = {}
 let discoveredChunks = {}
-let cunkSize = 12
+let chunkSize = 12
 
 let playerPos = [0, 0]
+let playerChunkPos = [0, 0]
 let playerVelocity = [0, 0]
 let viewingDistance = [11, 17];
-const collisionOffset = 0.2
+const collisionOffset = 0.4
+
+const lowestLevel = 2000; //deepness where hardest level is
+const lowestLevelAmmount = 0.095 //how hard the hardest level is (0.088 is on the limit to impossible)
 
 const gravity = 0.001;
 const movementSpeed = 0.02;
 const blockBounciness = 0.4;
+
+function sound(src) {
+  this.sound = document.createElement("audio");
+  this.sound.src = src;
+  this.sound.setAttribute("preload", "auto");
+  this.sound.setAttribute("controls", "none");
+  this.sound.style.display = "none";
+  document.body.appendChild(this.sound);
+  this.play = function(){
+    this.sound.play();
+  }
+  this.stop = function(){
+    this.sound.pause();
+  }
+}
+
+let bounceSound = new sound("./src/resourses/bounce.mp3")
 
 class block{
   constructor(pos, ID) {
@@ -55,10 +89,61 @@ class block{
   }
 }
 
+const bgImgSize = 700;
+
+class backgroundObject{
+  constructor(pos) {
+    this.pos = pos;
+  }
+}
+
+class backgroundLayer{
+  constructor(parallaxSpeed, image) {
+    this.parallaxSpeed = parallaxSpeed;
+    this.image = image;
+    this.backgroundObjectsList = [
+      new backgroundObject([0, 0]),
+      new backgroundObject([0, bgImgSize]),
+      new backgroundObject([bgImgSize, 0]),
+      new backgroundObject([bgImgSize, bgImgSize])
+  ]
+  }
+
+  Update() {
+    for (let i = 0; i < this.backgroundObjectsList.length; i++){
+      let curBackgroundOB = this.backgroundObjectsList[i]
+      let px_x = curBackgroundOB.pos[0] - playerPos[0]*block_px_size*this.parallaxSpeed;
+      let px_y = curBackgroundOB.pos[1] + playerPos[1]*block_px_size*this.parallaxSpeed;
+  
+      if (px_x < -bgImgSize){
+        curBackgroundOB.pos[0] += bgImgSize*2
+      }
+      else if (px_x >= bgImgSize){
+        curBackgroundOB.pos[0] -= bgImgSize*2
+      }
+  
+      if (px_y < -bgImgSize){
+        curBackgroundOB.pos[1] += bgImgSize*2
+      }
+      else if (px_y >= bgImgSize){
+        curBackgroundOB.pos[1] -= bgImgSize*2
+      }
+  
+      ctx.drawImage(this.image, 0, 0, 1024, 1024, px_x, px_y, bgImgSize, bgImgSize)
+    }
+  }
+}
+
+let bgLayers = [
+  new backgroundLayer(0.1, backgroundImage0), 
+  new backgroundLayer(0.2, backgroundImage1),
+  new backgroundLayer(0.25, backgroundImage2),
+  new backgroundLayer(0.3, backgroundImage3)]
+
 Start();
 
 function Start(){
-  return
+  return;
 }
 
 let curAnimIndex = 0;
@@ -97,7 +182,7 @@ function mainLoop(timestamp) {
 
   displayInfo = "Position: " + Math.floor(playerPos[0]) + ", " + Math.floor(playerPos[1]) + 
   "<br> FPS: " + Math.round(1000/deltaTime);
-  txt.innerHTML = displayInfo;
+  //txt.innerHTML = displayInfo;
   depthText.innerHTML = Math.floor(-playerPos[1]/10)*10;
   
   updatePlayer();
@@ -105,13 +190,19 @@ function mainLoop(timestamp) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "darkslateblue";
   ctx.fillRect(0, 0, screenSize[0], screenSize[1]);
-  ctx.drawImage(backgroundImage, playerPos[0]*2, -playerPos[1]*2, 1024, 1024, -500, -500, 2048, 2048)
+  for (let i = 0; i < bgLayers.length; i++){
+    bgLayers[i].Update();
+  }
 
   updateWorld();
   renderObjects(timestamp);
 
   lastFrameTimeMs = timestamp;
   requestAnimationFrame(mainLoop);
+}
+
+function downBoost(){
+  playerVelocity = addVectors(playerVelocity, [0, -0.4])
 }
 
 function updatePlayer(){
@@ -127,13 +218,13 @@ function updateWorld(){
   start_y = Math.floor(playerPos[1]) - viewingDistance[1];
   end_y = Math.floor(playerPos[1]) + viewingDistance[1];
 
-  let playerChunkPos = [Math.floor(playerPos[0]/cunkSize), Math.floor(playerPos[1]/cunkSize)]
+  playerChunkPos = [Math.floor(playerPos[0]/chunkSize), Math.floor(playerPos[1]/chunkSize)]
   for (let y = playerChunkPos[1]-1; y < playerChunkPos[1]+2; y++){
     for (let x = playerChunkPos[0]-2; x < playerChunkPos[0]+2; x++){
       lookChunkPos = [x, y]
       if (discoveredChunks[lookChunkPos] == undefined && playerChunkPos[1] <= -2){
         discoveredChunks[lookChunkPos] = 1
-        createChunk(lookChunkPos[0]*cunkSize, (lookChunkPos[0]+1)*cunkSize, lookChunkPos[1]*cunkSize, (lookChunkPos[1]+1)*cunkSize)
+        createChunk(lookChunkPos[0]*chunkSize, (lookChunkPos[0]+1)*chunkSize, (lookChunkPos[1]+1)*chunkSize, lookChunkPos[1]*chunkSize)
       }
     }
   }
@@ -146,10 +237,13 @@ function updateWorld(){
 
       //CHECK COLLISIONS
       if (playerPos[1] <= y && playerPos[1] >= y-2 && playerPos[0] >= x+collisionOffset && playerPos[0] <= x+2-collisionOffset){
-        if (floating)
-          playerVelocity = addVectors(playerVelocity, [0, 0.03])
-        else
-          playerVelocity = [0, blockBounciness] //addVectors(playerVelocity, [0, 0.02]) //
+        //if (floating)
+          //playerVelocity = addVectors(playerVelocity, [0, 0.03])
+        playerVelocity = [0, blockBounciness] //addVectors(playerVelocity, [0, 0.02]) //
+        //bounceSound.play();
+        if (curBlock.ID == 3){
+          playerVelocity = addVectors(playerVelocity, [Math.random()*2-1, Math.random()])
+        }
       }
 
       //RENDER
@@ -167,16 +261,29 @@ function updateWorld(){
 }
 
 function createChunk(start_x, end_x, start_y, end_y){
-  for (let y = start_y; y < end_y; y++){
+  let percentageToLowest = -playerPos[1]/lowestLevel
+  if (percentageToLowest > 1)
+    percentageToLowest = 1;
+
+  for (let y = start_y; y > end_y; y--){
     for (let x = start_x; x < end_x; x++){
-      curPN1 = pn.noise(x/perlinScale, y/perlinScale, 0) 
-      curPN2 = pn.noise((x+1000)/perlinScale*2, (y+1000)/perlinScale*2, 0) 
-      curPN = (curPN1 + curPN2)/2
-      blockID = 0
-      if (curPN > 0.6){
-        blockID = 1
+      let noise1 = pn.noise(x/perlinScale, y/perlinScale, 0) //mediumscale
+      let noise2 = pn.noise((x+1000)/perlinScale*2, (y+1000)/perlinScale*2, 0) //smallscale
+      let noise3 = pn.noise((x+10000)/perlinScale*1, (y+10000)/perlinScale*0.1, 0) //vertical drops
+      let noiseSum = noise1*0.5 + noise2*0.4 + noise3*0.1
+      
+      blockID = 1
+      if (worldBlocksDict[[x, y+1]] == undefined && y != start_y){
+        blockID = 0
       }
-      if (curPN > 0.55){ //0.52 is good
+
+      if (worldBlocksDict[[x-1, y]] == undefined && y != start_y){
+        if (Math.random() < 0.3){
+          blockID = 3
+        }
+      }
+
+      if (noiseSum > 0.6 - percentageToLowest*lowestLevelAmmount){ //0.55 is good
         let newBlock = new block([x, y], blockID)
         worldBlocksDict[[x, y]] = newBlock 
       }
