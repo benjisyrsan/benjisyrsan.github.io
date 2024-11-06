@@ -22,6 +22,9 @@ body {
   font-size: 25px; 
   color: white;
   font-family: "Brush Script MT";
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
 }
 
 #gamescreen {
