@@ -108,6 +108,7 @@ function keyUpHandler(event) {
 }
 
 function setMovementDirection(){
+  StartMusic();
   if (rightDown && leftDown){
     movement_direction[0] = 0;
     curAnimType = 2
@@ -129,7 +130,7 @@ function setMovementDirection(){
   }
 
   if (downDown){
-    downBoost();
-    downDown = false;
+    //downBoost();
+    //downDown = false;
   }
 }

@@ -6,11 +6,8 @@ var ctxGui = gui.getContext("2d");
 //var txt = document.getElementById("infotext");
 let depthText = document.getElementById("depthText");
 
-var screenSize = [400, 600];
-if (window.innerHeight > window.innerWidth){
-  screenSize = [window.innerWidth, window.innerWidth*1.5];
-}
-//var screenSize = [1000, 1500];
+var screenSize = [470, 705];
+
 canvas.setAttribute('width', screenSize[0]);
 canvas.setAttribute('height', screenSize[1]);
 gui.setAttribute('width', screenSize[0]);
@@ -38,12 +35,14 @@ textureSheet.onload = function(){
   ctx.imageSmoothingEnabled = false;
 }
 
+const bgImgSize = canvas.height;
+
 var lastFrameTimeMs = 0;
 var maxFPS = 60;
 let deltaTime = 0;
 
 var lastPos = [0, 0];
-var block_px_size = 20
+var block_px_size = canvas.width/20;
 
 var pn = new Perlin(0);
 let perlinScale = 10
@@ -61,9 +60,9 @@ const collisionOffset = 0.4
 const lowestLevel = 2000; //deepness where hardest level is
 const lowestLevelAmmount = 0.095 //how hard the hardest level is (0.088 is on the limit to impossible)
 
-const gravity = 0.001;
+const gravity = 0.0005;
 const movementSpeed = 0.02;
-const blockBounciness = 0.4;
+const blockBounciness = 0.3;
 
 function sound(src) {
   this.sound = document.createElement("audio");
@@ -80,7 +79,8 @@ function sound(src) {
   }
 }
 
-let bounceSound = new sound("./src/resourses/bounce.mp3")
+let bounceSound = new sound("./src/resourses/bounce.mp3");
+let soundtrack = new sound("./src/resourses/benjis_song_atbbish.mp3");
 
 class block{
   constructor(pos, ID) {
@@ -88,8 +88,6 @@ class block{
     this.ID = ID
   }
 }
-
-const bgImgSize = 700;
 
 class backgroundObject{
   constructor(pos) {
@@ -140,10 +138,10 @@ let bgLayers = [
   new backgroundLayer(0.25, backgroundImage2),
   new backgroundLayer(0.3, backgroundImage3)]
 
-Start();
-
-function Start(){
-  return;
+hasStartedSong = false;
+function StartMusic(){
+  soundtrack.play();
+  hasStartedSong = true;
 }
 
 let curAnimIndex = 0;
@@ -171,6 +169,10 @@ var displayInfo = "...";
 //Gameloop
 requestAnimationFrame(mainLoop);
 function mainLoop(timestamp) {
+  if (document.hidden) {
+    requestAnimationFrame(mainLoop);
+    return;
+  }
   /*
   if (timestamp < lastFrameTimeMs + 1000 / maxFPS) {
     requestAnimationFrame(mainLoop);
@@ -240,7 +242,7 @@ function updateWorld(){
         //if (floating)
           //playerVelocity = addVectors(playerVelocity, [0, 0.03])
         playerVelocity = [0, blockBounciness] //addVectors(playerVelocity, [0, 0.02]) //
-        //bounceSound.play();
+        bounceSound.play();
         if (curBlock.ID == 3){
           playerVelocity = addVectors(playerVelocity, [Math.random()*2-1, Math.random()])
         }

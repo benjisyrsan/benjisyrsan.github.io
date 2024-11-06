@@ -1,49 +1,51 @@
 body {
-  padding: 0;
   margin: 0;
   background-color: lightgrey;
+  
 }
 
 #gamediv {
-  position: absolute;
+  display: flex;
+  justify-content: center;
 }
 
 #scorediv {
-  padding-left: 5px;
   position: absolute;
+  display: flex;
+  flex-direction: row;
+  padding: 10px;
+  
 }
 
 .gametext {
-  -webkit-user-select: none; /* Safari */
-  -ms-user-select: none; /* IE 10 and IE 11 */
-  user-select: none; /* Standard syntax */
-
-  font-size: 20px; 
+  margin: 5px;
+  font-size: 25px; 
   color: white;
-  font-family: Fantasy
+  font-family: "Brush Script MT";
 }
 
 #gamescreen {
-  border: 2px;
-  border-color: #000000;
-  border-style: solid;
+  position: absolute;
+  border-radius: 2%;
 
   image-rendering: -moz-crisp-edges;
   image-rendering: -webkit-crisp-edges;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+}
 
-  position: absolute;
-  top: 0;
-  left: 0;
+@media only screen and (orientation: landscape) {
+  #gamescreen {
+    height: 100%;
+  }
+}
+
+@media only screen and (orientation: portrait) {
+  #gamescreen {
+    width: 100%;
+  }
 }
 
 #gui {
-  border: 2px;
-  border-color: #000000;
-  border-style: solid;
-
   position: absolute;
-  top: 0;
-  left: 0;
 }
