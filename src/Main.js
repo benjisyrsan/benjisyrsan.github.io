@@ -81,6 +81,7 @@ function sound(src) {
 
 let bounceSound = new sound("./src/resourses/bounce.mp3");
 let soundtrack = new sound("./src/resourses/benjis_song_atbbish.mp3");
+soundtrack.sound.loop = true;
 
 class block{
   constructor(pos, ID) {
@@ -251,7 +252,9 @@ function updateWorld(){
       //RENDER
       ctx.drawImage(textureSheet, 0, 16 + curBlock.ID*8, 8, 8, 
         screenSize[0]/2 + (x - playerPos[0]) * block_px_size, 
-        screenSize[1]/2 - (y - playerPos[1]) * block_px_size, block_px_size, block_px_size);
+        screenSize[1]/2 - (y - playerPos[1]) * block_px_size, 
+        block_px_size, 
+        block_px_size);
       continue
       ctx.fillStyle = "green"
       ctx.fillRect(
