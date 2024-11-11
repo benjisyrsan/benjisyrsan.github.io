@@ -1,25 +1,31 @@
+var screenSize = [470, 705];
+
 var canvas = document.getElementById("gamescreen");
+canvas.setAttribute('width', screenSize[0]);
+canvas.setAttribute('height', screenSize[1]);
 var ctx = canvas.getContext("2d", { alpha: false });
 
+//offscreen canvas
+//var offscreenCanvas = document.createElement("canvas");
+//offscreenCanvas.width = canvas.width;
+//offscreenCanvas.height = canvas.height;
+//var offscreenCanvasCtx = offscreenCanvas.getContext("2d", { alpha: false });
+
 var gui = document.getElementById("gui");
+gui.setAttribute('width', screenSize[0]);
+gui.setAttribute('height', screenSize[1]);
 var ctxGui = gui.getContext("2d");
+
 var txt = document.getElementById("infotext");
 let depthText = document.getElementById("depthText");
 var coinText = document.getElementById("inGameInfo");
-
-var screenSize = [470, 705];
-
-canvas.setAttribute('width', screenSize[0]);
-canvas.setAttribute('height', screenSize[1]);
-gui.setAttribute('width', screenSize[0]);
-gui.setAttribute('height', screenSize[1]);
 
 const textureSheet = new Image();
 textureSheet.src = "./src/resourses/grass_tile.png";
 textureSheet.onload = function(){
   ctx.imageSmoothingEnabled = false;
 }
-let textureBlockSize = 8; //px
+let textureBlockSize = 32; //px
 
 const playerAnimationSheet = new Image();
 playerAnimationSheet.src = "./src/resourses/playerAnimation.png";
@@ -44,8 +50,7 @@ var capFPS = false;
 let deltaTime = 0;
 
 var lastPos = [0, 0];
-var widthInBlocks = 16; //16
-var block_px_size = canvas.width/widthInBlocks;
+var block_px_size = 32;
 
 var pn = new Perlin(Math.floor(Math.random()*9999));
 let perlinScale = 17;
@@ -172,6 +177,7 @@ function mainLoop(timestamp) {
   coinText.innerHTML = coins;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  //offscreenCanvasCtx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "darkslateblue";
   ctx.fillRect(0, 0, screenSize[0], screenSize[1]);
   for (let i = 0; i < bgLayers.length; i++){
@@ -239,19 +245,17 @@ function updateWorld(){
       }
 
       //RENDER
+      xPosScreen = Math.floor(screenSize[0]/2 + (x - playerPos[0]) * block_px_size);
+      yPosScreen = Math.floor(screenSize[1]/2 - (y - playerPos[1]) * block_px_size);
       ctx.drawImage(textureSheet, 0, 2*textureBlockSize + curBlock.ID*textureBlockSize, textureBlockSize, textureBlockSize, 
-        screenSize[0]/2 + (x - playerPos[0]) * block_px_size, 
-        screenSize[1]/2 - (y - playerPos[1]) * block_px_size, 
+        xPosScreen, 
+        yPosScreen, 
         block_px_size, 
         block_px_size);
-      continue
-      ctx.fillStyle = "green"
-      ctx.fillRect(
-        screenSize[0]/2 + (x - playerPos[0]) * block_px_size, 
-        screenSize[1]/2 - (y - playerPos[1]) * block_px_size, 
-        block_px_size, block_px_size)
     }
   }
+
+  //offscreen canvas:   ctx.drawImage(offscreenCanvas, 0, 0);
 }
 
 function renderObjects(timestamp) {

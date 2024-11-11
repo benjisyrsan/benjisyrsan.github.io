@@ -1,6 +1,6 @@
 body {
   margin: 0;
-  background-color: lightgrey;
+  background-color: rgb(65, 65, 65);
   overflow-x: hidden;
   overflow-y: hidden;
   width: 100%;
@@ -31,7 +31,6 @@ body {
 
 #gamescreen {
   position: absolute;
-  border-radius: 2%;
 
   image-rendering: -moz-crisp-edges;
   image-rendering: -webkit-crisp-edges;
