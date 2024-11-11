@@ -3,8 +3,9 @@ var ctx = canvas.getContext("2d", { alpha: false });
 
 var gui = document.getElementById("gui");
 var ctxGui = gui.getContext("2d");
-//var txt = document.getElementById("infotext");
+var txt = document.getElementById("infotext");
 let depthText = document.getElementById("depthText");
+var coinText = document.getElementById("inGameInfo");
 
 var screenSize = [470, 705];
 
@@ -15,6 +16,10 @@ gui.setAttribute('height', screenSize[1]);
 
 const textureSheet = new Image();
 textureSheet.src = "./src/resourses/grass_tile.png";
+textureSheet.onload = function(){
+  ctx.imageSmoothingEnabled = false;
+}
+let textureBlockSize = 8; //px
 
 const playerAnimationSheet = new Image();
 playerAnimationSheet.src = "./src/resourses/playerAnimation.png";
@@ -31,57 +36,39 @@ backgroundImage2.src = "./src/resourses/bgImgLayer2.png";
 const backgroundImage3 = new Image();
 backgroundImage3.src = "./src/resourses/bgImgLayer3.png";
 
-textureSheet.onload = function(){
-  ctx.imageSmoothingEnabled = false;
-}
-
 const bgImgSize = canvas.height;
 
 var lastFrameTimeMs = 0;
-var maxFPS = 60;
+var maxFPS = 20;
+var capFPS = false;
 let deltaTime = 0;
 
 var lastPos = [0, 0];
-var block_px_size = canvas.width/20;
+var widthInBlocks = 16; //16
+var block_px_size = canvas.width/widthInBlocks;
 
-var pn = new Perlin(0);
-let perlinScale = 10
+var pn = new Perlin(Math.floor(Math.random()*9999));
+let perlinScale = 17;
 
 let worldBlocksDict = {}
 let discoveredChunks = {}
-let chunkSize = 12
+let chunkSize = 6; //12
+let chunkSpawnDist = [-2, 2, -3, 2]; //left to right, bot to top
 
 let playerPos = [0, 0]
 let playerChunkPos = [0, 0]
 let playerVelocity = [0, 0]
-let viewingDistance = [11, 17];
-const collisionOffset = 0.4
+let viewingDistance = [9, 14]; // [9, 14]
+const collisionOffset = 0.4;
 
 const lowestLevel = 2000; //deepness where hardest level is
-const lowestLevelAmmount = 0.095 //how hard the hardest level is (0.088 is on the limit to impossible)
+const lowestLevelAmmount = 0.095; //how hard the hardest level is (0.088 is on the limit to impossible)
 
-const gravity = 0.0005;
-const movementSpeed = 0.02;
-const blockBounciness = 0.3;
+const gravity = 0.000035;
+const movementSpeed = 0.015;
+const blockBounciness = 0.02;
 
-function sound(src) {
-  this.sound = document.createElement("audio");
-  this.sound.src = src;
-  this.sound.setAttribute("preload", "auto");
-  this.sound.setAttribute("controls", "none");
-  this.sound.style.display = "none";
-  document.body.appendChild(this.sound);
-  this.play = function(){
-    this.sound.play();
-  }
-  this.stop = function(){
-    this.sound.pause();
-  }
-}
-
-let bounceSound = new sound("./src/resourses/bounce.mp3");
-let soundtrack = new sound("./src/resourses/benjis_song_atbbish.mp3");
-soundtrack.sound.loop = true;
+let coins = 0;
 
 class block{
   constructor(pos, ID) {
@@ -135,14 +122,16 @@ class backgroundLayer{
 
 let bgLayers = [
   new backgroundLayer(0.1, backgroundImage0), 
-  new backgroundLayer(0.2, backgroundImage1),
-  new backgroundLayer(0.25, backgroundImage2),
+  //new backgroundLayer(0.2, backgroundImage1),
+  //new backgroundLayer(0.25, backgroundImage2),
   new backgroundLayer(0.3, backgroundImage3)]
 
 hasStartedSong = false;
 function StartMusic(){
-  soundtrack.play();
-  hasStartedSong = true;
+  if (!hasStartedSong){
+    soundtrack.play();
+    hasStartedSong = true;
+  }
 }
 
 let curAnimIndex = 0;
@@ -150,45 +139,37 @@ let curAnimType = 0;
 let lastAnimationTimestamp = 0;
 const animationSpeedMS = 100;
 
-function renderObjects(timestamp) {
-  ctx.drawImage(playerAnimationSheet, curAnimType*16, curAnimIndex*16, 16, 16, canvas.width/2 - block_px_size, canvas.height/2 - block_px_size, block_px_size, block_px_size);
-  
-  if (timestamp - lastAnimationTimestamp < animationSpeedMS)
-    return;
-
-  lastAnimationTimestamp = timestamp
-  curAnimIndex ++;
-  if (curAnimIndex == 3)
-    curAnimIndex = 0;
-  return
-  ctx.fillStyle = "red";
-  ctx.fillRect(canvas.width/2 - block_px_size, canvas.height/2 - block_px_size, block_px_size, block_px_size);
-}
-
 var displayInfo = "...";
+
+let timeBeforeInactive = 0;
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    timeBeforeInactive = Date.now();
+  } 
+  else{
+    lastFrameTimeMs += Date.now() - timeBeforeInactive;
+  }
+});
+
 
 //Gameloop
 requestAnimationFrame(mainLoop);
 function mainLoop(timestamp) {
-  if (document.hidden) {
+  
+  if (capFPS && timestamp < lastFrameTimeMs + 1000 / maxFPS) {
     requestAnimationFrame(mainLoop);
     return;
   }
+
+  deltaTime = timestamp - lastFrameTimeMs;
+
   /*
-  if (timestamp < lastFrameTimeMs + 1000 / maxFPS) {
-    requestAnimationFrame(mainLoop);
-    return;
-  }
-  */
-
-  deltaTime = timestamp - lastFrameTimeMs
-
   displayInfo = "Position: " + Math.floor(playerPos[0]) + ", " + Math.floor(playerPos[1]) + 
   "<br> FPS: " + Math.round(1000/deltaTime);
-  //txt.innerHTML = displayInfo;
+  txt.innerHTML = displayInfo;
+  */
   depthText.innerHTML = Math.floor(-playerPos[1]/10)*10;
-  
-  updatePlayer();
+  coinText.innerHTML = coins;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "darkslateblue";
@@ -197,6 +178,8 @@ function mainLoop(timestamp) {
     bgLayers[i].Update();
   }
 
+  
+  updatePlayer();
   updateWorld();
   renderObjects(timestamp);
 
@@ -204,33 +187,30 @@ function mainLoop(timestamp) {
   requestAnimationFrame(mainLoop);
 }
 
-function downBoost(){
-  playerVelocity = addVectors(playerVelocity, [0, -0.4])
-}
-
 function updatePlayer(){
   playerVelocity = addVectors(playerVelocity, [0, -gravity * deltaTime])
-  playerPos = addVectors(playerPos, playerVelocity)
+  playerPos = addVectors(playerPos, [playerVelocity[0]*deltaTime, playerVelocity[1]*deltaTime])
   playerPos = addVectors(playerPos, [movement_direction[0] * movementSpeed * deltaTime, 0])
-  //playerPos = pxPos
 }
 
 function updateWorld(){
-  start_x = Math.floor(playerPos[0]) - viewingDistance[0];
-  end_x = Math.floor(playerPos[0]) + viewingDistance[0];
-  start_y = Math.floor(playerPos[1]) - viewingDistance[1];
-  end_y = Math.floor(playerPos[1]) + viewingDistance[1];
-
+  //spawn chunks
   playerChunkPos = [Math.floor(playerPos[0]/chunkSize), Math.floor(playerPos[1]/chunkSize)]
-  for (let y = playerChunkPos[1]-1; y < playerChunkPos[1]+2; y++){
-    for (let x = playerChunkPos[0]-2; x < playerChunkPos[0]+2; x++){
-      lookChunkPos = [x, y]
+  for (let y = playerChunkPos[1]+chunkSpawnDist[2]; y < playerChunkPos[1]+chunkSpawnDist[3]+1; y++){
+    for (let x = playerChunkPos[0]+chunkSpawnDist[0]; x < playerChunkPos[0]+chunkSpawnDist[1]+1; x++){
+      lookChunkPos = [x, y];
       if (discoveredChunks[lookChunkPos] == undefined && playerChunkPos[1] <= -2){
-        discoveredChunks[lookChunkPos] = 1
-        createChunk(lookChunkPos[0]*chunkSize, (lookChunkPos[0]+1)*chunkSize, (lookChunkPos[1]+1)*chunkSize, lookChunkPos[1]*chunkSize)
+        discoveredChunks[lookChunkPos] = 1;
+        createChunk(lookChunkPos[0]*chunkSize, (lookChunkPos[0]+1)*chunkSize, (lookChunkPos[1]+1)*chunkSize, lookChunkPos[1]*chunkSize);
       }
     }
   }
+
+  //checking blocks in view
+  start_x = Math.floor(playerPos[0]) - viewingDistance[0];
+  end_x = Math.floor(playerPos[0]) + viewingDistance[0] + 1;
+  start_y = Math.floor(playerPos[1]) - viewingDistance[1] + 2;
+  end_y = Math.floor(playerPos[1]) + viewingDistance[1];
 
   for (let y = start_y; y < end_y; y++){
     for (let x = start_x; x < end_x; x++){
@@ -240,17 +220,26 @@ function updateWorld(){
 
       //CHECK COLLISIONS
       if (playerPos[1] <= y && playerPos[1] >= y-2 && playerPos[0] >= x+collisionOffset && playerPos[0] <= x+2-collisionOffset){
-        //if (floating)
-          //playerVelocity = addVectors(playerVelocity, [0, 0.03])
-        playerVelocity = [0, blockBounciness] //addVectors(playerVelocity, [0, 0.02]) //
-        bounceSound.play();
         if (curBlock.ID == 3){
-          playerVelocity = addVectors(playerVelocity, [Math.random()*2-1, Math.random()])
+          let lavaBounciness = 0.05;
+          playerVelocity = [lavaBounciness*(Math.random()-0.5), blockBounciness + lavaBounciness*(Math.random()*0.5)]
+          lavaSound.play();
+        }
+
+        else if (curBlock.ID == 4){ //coin pickup
+          delete worldBlocksDict[[x, y]]
+          coinSound.play();
+          coins ++;
+        }
+
+        else{
+          playerVelocity = [0, blockBounciness]
+          bounceSound.play();
         }
       }
 
       //RENDER
-      ctx.drawImage(textureSheet, 0, 16 + curBlock.ID*8, 8, 8, 
+      ctx.drawImage(textureSheet, 0, 2*textureBlockSize + curBlock.ID*textureBlockSize, textureBlockSize, textureBlockSize, 
         screenSize[0]/2 + (x - playerPos[0]) * block_px_size, 
         screenSize[1]/2 - (y - playerPos[1]) * block_px_size, 
         block_px_size, 
@@ -265,6 +254,25 @@ function updateWorld(){
   }
 }
 
+function renderObjects(timestamp) {
+  ctx.drawImage(playerAnimationSheet, curAnimType*16, curAnimIndex*16, 16, 16, canvas.width/2 - block_px_size, canvas.height/2 - block_px_size, block_px_size, block_px_size);
+  
+  //ctx.strokeStyle = "blue";
+  //ctx.lineWidth = 2;
+  //ctx.strokeRect(canvas.width/2 - canvas.width*(16/widthInBlocks)/2, canvas.height/2 - 1.5*canvas.width*(16/widthInBlocks)/2, canvas.width*(16/widthInBlocks), canvas.width*(16/widthInBlocks)*1.5);
+  
+  if (timestamp - lastAnimationTimestamp < animationSpeedMS)
+    return;
+
+  lastAnimationTimestamp = timestamp
+  curAnimIndex ++;
+  if (curAnimIndex == 3)
+    curAnimIndex = 0;
+  return
+  ctx.fillStyle = "red";
+  ctx.fillRect(canvas.width/2 - block_px_size, canvas.height/2 - block_px_size, block_px_size, block_px_size);
+}
+
 function createChunk(start_x, end_x, start_y, end_y){
   let percentageToLowest = -playerPos[1]/lowestLevel
   if (percentageToLowest > 1)
@@ -272,25 +280,40 @@ function createChunk(start_x, end_x, start_y, end_y){
 
   for (let y = start_y; y > end_y; y--){
     for (let x = start_x; x < end_x; x++){
-      let noise1 = pn.noise(x/perlinScale, y/perlinScale, 0) //mediumscale
-      let noise2 = pn.noise((x+1000)/perlinScale*2, (y+1000)/perlinScale*2, 0) //smallscale
+      let noise1 = pn.noise(x/perlinScale*1.2, y/perlinScale, 0) //mediumscale
+      let noise2 = pn.noise((x+1000)/perlinScale*2, (y+1000)/perlinScale*1.7, 0) //smallscale
       let noise3 = pn.noise((x+10000)/perlinScale*1, (y+10000)/perlinScale*0.1, 0) //vertical drops
-      let noiseSum = noise1*0.5 + noise2*0.4 + noise3*0.1
+      let noiseSum = noise1*0.5 + noise2*0.4 + noise3*0.1;
       
+      //spawn stone
       blockID = 1
+
+      //spawn grass
       if (worldBlocksDict[[x, y+1]] == undefined && y != start_y){
-        blockID = 0
+        blockID = 0;
       }
 
+      //spawn lava
       if (worldBlocksDict[[x-1, y]] == undefined && y != start_y){
         if (Math.random() < 0.3){
-          blockID = 3
+          blockID = 3;
         }
       }
 
       if (noiseSum > 0.6 - percentageToLowest*lowestLevelAmmount){ //0.55 is good
-        let newBlock = new block([x, y], blockID)
-        worldBlocksDict[[x, y]] = newBlock 
+        let newBlock = new block([x, y], blockID);
+        worldBlocksDict[[x, y]] = newBlock;
+      }
+
+      else{
+        //spawn coin
+        if (worldBlocksDict[[x, y]] == undefined && y != start_y){
+          if (Math.random() < 0.003){
+            blockID = 4;
+            let newBlock = new block([x, y], blockID);
+            worldBlocksDict[[x, y]] = newBlock;
+          }
+        }
       }
     }
   }

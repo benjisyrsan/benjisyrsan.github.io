@@ -484,7 +484,8 @@ function Perlin(seed) {
 
   var rand = {};
   rand.random = new Alea(seed);
-  var noise = new ClassicalNoise(rand);
+  var noise = new SimplexNoise(rand);
+  //var noise = new ClassicalNoise(rand);
 
   this.noise = function (x, y, z) {
     return 0.5 * noise.noise(x, y, z) + 0.5;

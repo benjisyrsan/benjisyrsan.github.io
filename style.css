@@ -1,12 +1,15 @@
 body {
   margin: 0;
   background-color: lightgrey;
-  
+  overflow-x: hidden;
+  overflow-y: hidden;
+  width: 100%;
 }
 
 #gamediv {
   display: flex;
   justify-content: center;
+  
 }
 
 #scorediv {
@@ -14,7 +17,6 @@ body {
   display: flex;
   flex-direction: row;
   padding: 10px;
-  
 }
 
 .gametext {
