@@ -111,22 +111,22 @@ function setMovementDirection(){
   StartMusic();
   if (rightDown && leftDown){
     movement_direction[0] = 0;
-    curAnimType = 2
+    playerAnim.curAnimType = 2;
   }
 
   else if (rightDown){
     movement_direction[0] = 1;
-    curAnimType = 0
+    playerAnim.curAnimType = 0
   }
 
   else if (leftDown){
     movement_direction[0] = -1;
-    curAnimType = 1
+    playerAnim.curAnimType = 1
   }
 
   else{
     movement_direction[0] = 0;
-    curAnimType = 2
+    playerAnim.curAnimType = 2
   }
 
   if (downDown){

@@ -1,5 +1,13 @@
 let muteAudio = false;
 
+hasStartedSong = false;
+function StartMusic(){
+  if (!hasStartedSong){
+    hasStartedSong = true;
+    soundtrack.play();
+  }
+}
+
 function sound(src) {
     this.sound = document.createElement("audio");
     this.sound.src = src;
@@ -8,7 +16,7 @@ function sound(src) {
     this.sound.style.display = "none";
     document.body.appendChild(this.sound);
     this.play = function(){
-        if (!muteAudio){
+        if (!muteAudio && hasStartedSong){
             this.sound.play();
         }
     }
@@ -17,8 +25,8 @@ function sound(src) {
     }
   }
   
-let bounceSound = new sound("./src/resourses/bounce2.wav");
-let lavaSound = new sound("./src/resourses/lava.wav");
-let coinSound = new sound("./src/resourses/coin.wav");
-let soundtrack = new sound("./src/resourses/cavetheme.ogg");
+let bounceSound = new sound("./src/resourses/sounds/bounce2.wav");
+let lavaSound = new sound("./src/resourses/sounds/lava.wav");
+let coinSound = new sound("./src/resourses/sounds/coin.wav");
+let soundtrack = new sound("./src/resourses/sounds/cavetheme.ogg");
 soundtrack.sound.loop = true;
