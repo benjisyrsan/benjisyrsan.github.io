@@ -25,7 +25,7 @@ class block{
   }
 
 class Animator{
-    constructor(parentBlock, animationSheet, animSheetSize, animationSpeedMS) {
+    constructor(parentBlock, animationSheet, animSheetSize, animationSpeedMS, looping) {
       this.parentBlock = parentBlock; 
       this.animationSheet = animationSheet;
       this.sheetPxSize = animSheetSize;
@@ -35,17 +35,24 @@ class Animator{
       this.curAnimFrame = 0; //vertical
       this.curAnimType = 0; //horizontal
       this.frameAmount = this.animationSheet.height/this.sheetPxSize;
+      this.isPlaying = false;
+      this.looping = looping;
+      if (this.looping)
+        this.isPlaying = true;
     }
   
     Update(timestamp) {
         this.Render();
-        if (timestamp - this.lastAnimationTimestamp < this.animationSpeedMS)
+        if (!this.isPlaying || timestamp - this.lastAnimationTimestamp < this.animationSpeedMS)
             return;
         
         this.lastAnimationTimestamp = timestamp;
         this.curAnimFrame ++;
-        if (this.curAnimFrame == this.frameAmount)
-            this.curAnimFrame = 0;
+        if (this.curAnimFrame == this.frameAmount){
+          this.curAnimFrame = 0;
+          if (this.looping == false)
+            this.isPlaying = false;
+        }
     }
   
     Render() {

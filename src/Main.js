@@ -28,6 +28,12 @@ playerAnimationSheet.src = "./src/resourses/textures/playerAnimation.png";
 const coinAnimationSheet = new Image();
 coinAnimationSheet.src = "./src/resourses/textures/coinAnimation.png";
 
+const springAnimationSheet = new Image();
+springAnimationSheet.src = "./src/resourses/textures/spring_animation.png";
+
+const shopAnimationSheet = new Image();
+shopAnimationSheet.src = "./src/resourses/textures/shop_64px.png";
+
 const backgroundImage0 = new Image();
 backgroundImage0.src = "./src/resourses/textures/bgImgLayer0.png";
 
@@ -81,7 +87,7 @@ var displayInfo = "...";
 let timeBeforeInactive = 0;
 
 function Start(){ //images loaded
-  playerAnim = new Animator(new block([0, 0], -1), playerAnimationSheet, 16, 100);
+  playerAnim = new Animator(new block([0, 0], -1), playerAnimationSheet, 16, 100, true);
 
   requestAnimationFrame(mainLoop);
 }
@@ -175,10 +181,11 @@ function updateWorld(){
 
       //CHECK COLLISIONS
       if (playerPos[1] <= y+1 && playerPos[1] >= y-1 && playerPos[0] >= x-1+collisionOffset && playerPos[0] <= x+1-collisionOffset){
-        if (curBlock.ID == 3){
-          let lavaBounciness = 0.05;
-          playerVelocity = [lavaBounciness*(Math.random()-0.5), blockBounciness + lavaBounciness*(Math.random()*0.5)]
+        if (curBlock.ID == 3){ //lava
+          let lavaBounciness = 0.03;
+          playerVelocity = [0, blockBounciness + lavaBounciness]
           lavaSound.play();
+          curBlock.animator.isPlaying = true;
         }
 
         else if (curBlock.ID == 4){ //coin pickup
@@ -196,6 +203,14 @@ function updateWorld(){
       //RENDER
       let screenPos = world2screen([x, y]);
       if (curBlock.animator == null){
+        if (curBlock.ID == 10){
+          ctx.drawImage(shopAnimationSheet, 0, 0, 64, 64, 
+            screenPos[0], 
+            screenPos[1]-96, 
+            128, 
+            128);
+          continue;
+        }
         ctx.drawImage(textureSheet, 0, 2*textureBlockSize + curBlock.ID*textureBlockSize, textureBlockSize, textureBlockSize, 
           screenPos[0], 
           screenPos[1], 
@@ -224,33 +239,50 @@ function createChunk(start_x, end_x, start_y, end_y){
       let noise3 = pn.noise((x+10000)/perlinScale*1, (y+10000)/perlinScale*0.1, 0) //vertical drops
       let noiseSum = noise1*0.5 + noise2*0.4 + noise3*0.1;
       
-      //spawn stone
-      blockID = 1
-
-      //spawn grass
-      if (worldBlocksDict[[x, y+1]] == undefined && y != start_y){
-        blockID = 0;
-      }
-
-      //spawn lava
-      if (worldBlocksDict[[x-1, y]] == undefined && y != start_y){
-        if (Math.random() < 0.3){
-          blockID = 3;
-        }
-      }
-
+      //Something in ground
       if (noiseSum > 0.6 - percentageToLowest*lowestLevelAmmount){ //0.55 is good
+        //spawn stone
+        blockID = 1
+
+        //spawn grass
+        if (y != start_y && worldBlocksDict[[x, y+1]] == undefined){
+          blockID = 0;
+
+          //spawn spring
+          if (Math.random() < 0.2){
+            let newBlock = new block([x, y+1], 3);
+            newBlock.animator = new Animator(newBlock, springAnimationSheet, 8, 100, false);
+            worldBlocksDict[[x, y+1]] = newBlock;
+          }
+
+          //spawn shop
+          if (Math.random() < 0.001){
+            let newBlock = new block([x, y+1], 10);
+            worldBlocksDict[[x, y+1]] = newBlock;
+
+            worldBlocksDict[[x, y+2]] = new block([x, y+1], -1);
+            worldBlocksDict[[x, y+3]] = new block([x, y+1], -1);
+            worldBlocksDict[[x, y+4]] = new block([x, y+1], -1);
+
+            worldBlocksDict[[x+1, y+4]] = new block([x, y+1], -1);
+            worldBlocksDict[[x+2, y+4]] = new block([x, y+1], -1);
+            worldBlocksDict[[x+3, y+4]] = new block([x, y+1], -1);
+            worldBlocksDict[[x+4, y+4]] = new block([x, y+1], -1);
+          }
+        }
+
         let newBlock = new block([x, y], blockID);
         worldBlocksDict[[x, y]] = newBlock;
       }
 
+      //Something in air
       else{
         //spawn coin
         if (worldBlocksDict[[x, y]] == undefined && y != start_y){
           if (Math.random() < 0.003){
             blockID = 4;
             let newBlock = new block([x, y], blockID);
-            newBlock.animator = new Animator(newBlock, coinAnimationSheet, 32, 100);
+            newBlock.animator = new Animator(newBlock, coinAnimationSheet, 32, 100, true);
             worldBlocksDict[[x, y]] = newBlock;
           }
         }
