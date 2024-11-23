@@ -1,10 +1,10 @@
 let muteAudio = false;
 
-hasStartedSong = false;
+var hasStartedSong = false;
 function StartMusic(){
   if (!hasStartedSong){
     hasStartedSong = true;
-    soundtrack.play();
+    setTimeout(function(){soundtrack.play();}, 1000); 
   }
 }
 
