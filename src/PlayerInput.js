@@ -21,6 +21,9 @@ function touchHandler(e) {
     if (e.type == "touchstart"){
       mouseX = e.touches[0].pageX
       mouseY = e.touches[0].pageY
+      if (mouseY < window.innerHeight/3){
+        return;
+      }
 
       if (mouseX < window.innerWidth/2){
         leftDown = true

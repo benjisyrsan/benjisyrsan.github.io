@@ -11,8 +11,9 @@ gui.setAttribute('height', screenSize[1]);
 var ctxGui = gui.getContext("2d");
 
 var txt = document.getElementById("infotext");
-let depthText = document.getElementById("depthText");
+var depthText = document.getElementById("depthText");
 var coinText = document.getElementById("inGameInfo");
+var shopDiv = document.getElementById("shopMenu");
 
 const textureSheet = new Image();
 textureSheet.src = "./src/resourses/textures/grass_tile.png";
@@ -85,11 +86,40 @@ let globalTimestamp = 0;
 var displayInfo = "...";
 
 let timeBeforeInactive = 0;
+var isInShop = false;
+var canEnterShop = true;
 
 function Start(){ //images loaded
   playerAnim = new Animator(new block([0, 0], -1), playerAnimationSheet, 16, 100, true);
+  setTimeout(function(){requestAnimationFrame(mainLoop);}, 100);
+  //setTimeout(function(){spawnShop([4, -10])}, 500);
+}
 
-  requestAnimationFrame(mainLoop);
+function spawnShop(pos){
+  let clearRadius = 8;
+  for (let y=0; y<clearRadius; y++){
+    for (let x=-clearRadius; x<+clearRadius; x++){
+      let curWorldPos = [2+ x + pos[0], y + pos[1]];
+      if (Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)) > clearRadius){
+        continue;
+      }
+      
+      if (worldBlocksDict[curWorldPos] != undefined){
+        delete worldBlocksDict[curWorldPos];
+      }
+    }
+  }
+
+  for (let y=pos[1]; y<pos[1]+4; y++){
+    for (let x=pos[0]; x<pos[0]+4; x++){
+      worldBlocksDict[[x, y]] = new block([x, y], 11);
+    }
+  }
+  worldBlocksDict[pos] = new block(pos, 10);
+}
+
+function buyShopItem(index){
+  coins -= 10;
 }
 
 let bgLayers = [
@@ -142,6 +172,15 @@ function mainLoop(timestamp) {
 
 
 function updatePlayer(){
+  if (isInShop){
+    if (movement_direction[0] != 0 || movement_direction[1] != 0){
+      canEnterShop = false;
+      isInShop = false;
+      shopDiv.style.display = "none";
+      setTimeout(function(){canEnterShop = true;}, 1000);
+    }
+    return;
+  }
   //Movement
   playerVelocity = addVectors(playerVelocity, [0, -gravity * deltaTime])
   playerPos = addVectors(playerPos, [playerVelocity[0]*deltaTime, playerVelocity[1]*deltaTime])
@@ -189,9 +228,16 @@ function updateWorld(){
         }
 
         else if (curBlock.ID == 4){ //coin pickup
-          delete worldBlocksDict[[x, y]]
+          delete worldBlocksDict[[x, y]];
           coinSound.play();
           coins ++;
+        }
+
+        else if (curBlock.ID == 11){ //enter Shop
+          if (canEnterShop){
+            isInShop = true;
+            shopDiv.style.display = "flex";
+          }
         }
 
         else{
@@ -254,23 +300,8 @@ function createChunk(start_x, end_x, start_y, end_y){
             newBlock.animator = new Animator(newBlock, springAnimationSheet, 8, 100, false);
             worldBlocksDict[[x, y+1]] = newBlock;
           }
-
-          //spawn shop
-          if (Math.random() < 0.001){
-            let newBlock = new block([x, y+1], 10);
-            worldBlocksDict[[x, y+1]] = newBlock;
-
-            worldBlocksDict[[x, y+2]] = new block([x, y+1], -1);
-            worldBlocksDict[[x, y+3]] = new block([x, y+1], -1);
-            worldBlocksDict[[x, y+4]] = new block([x, y+1], -1);
-
-            worldBlocksDict[[x+1, y+4]] = new block([x, y+1], -1);
-            worldBlocksDict[[x+2, y+4]] = new block([x, y+1], -1);
-            worldBlocksDict[[x+3, y+4]] = new block([x, y+1], -1);
-            worldBlocksDict[[x+4, y+4]] = new block([x, y+1], -1);
-          }
         }
-
+        
         let newBlock = new block([x, y], blockID);
         worldBlocksDict[[x, y]] = newBlock;
       }
@@ -288,6 +319,11 @@ function createChunk(start_x, end_x, start_y, end_y){
         }
       }
     }
+  }
+
+  //spawn shop
+  if (Math.random() < 0.002){
+    spawnShop([start_x, start_y]);
   }
 }
 

@@ -7,3 +7,10 @@ After I made an 2D procedually generated map i couldn't figure out what the game
 
 ## Story
 Tänk på Dantes Inferno. Spöket måste djupt ner för den har syndat?
+
+## Tankar
+Lägre FPS => mycket bättre performance, alltså mycket optimeringspotential i rendering och collision check. 
+Borde prerendera varje chunk som off screen canvas.
+Bakgrunden är krävance pga hög upplösning - optimera 
+    - kan rendera den mer sällan då den rör sig hälften så långsamt
+    - måste då ha en egen canvas för bakgrund så man inte clearar allt.

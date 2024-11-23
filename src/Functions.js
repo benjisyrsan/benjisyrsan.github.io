@@ -86,8 +86,8 @@ class Animator{
         new backgroundObject([0, 0]),
         new backgroundObject([0, bgImgSize]),
         new backgroundObject([bgImgSize, 0]),
-        new backgroundObject([bgImgSize, bgImgSize])
-    ]
+        new backgroundObject([bgImgSize, bgImgSize])]
+      this.framesSinceLastRender = 0;
     }
   
     Update() {
@@ -109,8 +109,16 @@ class Animator{
         else if (px_y >= bgImgSize){
           curBackgroundOB.pos[1] -= bgImgSize*2
         }
-    
+
         ctx.drawImage(this.image, 0, 0, 1024, 1024, px_x, px_y, bgImgSize, bgImgSize)
+        continue;
+        //rendera mer sällan
+        this.framesSinceLastRender ++;
+        
+        if (this.framesSinceLastRender == 1/this.parallaxSpeed){
+          ctx.drawImage(this.image, 0, 0, 1024, 1024, px_x, px_y, bgImgSize, bgImgSize)
+          this.framesSinceLastRender = 0;
+        } 
       }
     }
   }

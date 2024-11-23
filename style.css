@@ -19,6 +19,17 @@ body {
   padding: 10px;
 }
 
+#shopMenu{
+  background-color: green;
+  width: 200px;
+  height: 200px;
+
+  position: absolute;
+  display: none;
+  flex-direction: row;
+  padding: 10px;
+}
+
 .gametext {
   margin: 5px;
   font-size: 25px; 
@@ -37,6 +48,8 @@ body {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
+
+
 
 @media only screen and (orientation: landscape) {
   #gamescreen {
