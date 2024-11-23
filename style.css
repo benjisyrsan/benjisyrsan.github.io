@@ -30,6 +30,12 @@ body {
   padding: 10px;
 }
 
+#powerButton{
+  position: absolute;
+  display: flex;
+  flex-direction: row;
+}
+
 .gametext {
   margin: 5px;
   font-size: 25px; 

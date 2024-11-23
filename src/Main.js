@@ -89,6 +89,8 @@ let timeBeforeInactive = 0;
 var isInShop = false;
 var canEnterShop = true;
 
+var dynamites = 0;
+
 function Start(){ //images loaded
   playerAnim = new Animator(new block([0, 0], -1), playerAnimationSheet, 16, 100, true);
   setTimeout(function(){requestAnimationFrame(mainLoop);}, 100);
@@ -98,7 +100,7 @@ function Start(){ //images loaded
 function spawnShop(pos){
   let clearRadius = 8;
   for (let y=0; y<clearRadius; y++){
-    for (let x=-clearRadius; x<+clearRadius; x++){
+    for (let x=-clearRadius; x<clearRadius; x++){
       let curWorldPos = [2+ x + pos[0], y + pos[1]];
       if (Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)) > clearRadius){
         continue;
@@ -119,7 +121,31 @@ function spawnShop(pos){
 }
 
 function buyShopItem(index){
-  coins -= 10;
+  if (coins >= 10){
+    coins -= 10;
+    dynamites ++;
+  }
+}
+
+function fireDynamite(){
+  if (dynamites <= 0){
+    return;
+  }
+  dynamites --;
+  
+  let clearRadius = 8;
+  for (let y=-clearRadius; y<clearRadius; y++){
+    for (let x=-clearRadius; x<clearRadius; x++){
+      let curWorldPos = [x + Math.floor(playerPos[0]), y + Math.floor(playerPos[1])];
+      if (Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)) > clearRadius){
+        continue;
+      }
+
+      if (worldBlocksDict[curWorldPos] != undefined){
+        delete worldBlocksDict[curWorldPos];
+      }
+    }
+  }
 }
 
 let bgLayers = [
